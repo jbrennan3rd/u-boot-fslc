@@ -1,0 +1,7 @@
+MX7DSKYNFF BOARD
+M:
+S:	
+F:	board/freescale/mx7dskynff
+F:	include/configs/mx7dskynff.h
+F:	configs/mx7dskynff_defconfig
+F:	configs/mx7dskynff_secure_defconfig
