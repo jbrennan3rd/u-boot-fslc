@@ -614,7 +614,7 @@ int checkboard(void)
 	else
 		mode = "non-secure";
 
-	printf("Board: i.MX7D SABRESD in %s mode\n", mode);
+	printf("Board: i.MX7D SKYNFF in %s mode\n", mode);
 
 	return 0;
 }
