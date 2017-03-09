@@ -120,93 +120,26 @@ static iomux_v3_cfg_t const usb_otg2_pads[] = {
 	MX7D_PAD_UART3_CTS_B__USB_OTG2_PWR | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
-#define IOX_SDI IMX_GPIO_NR(1, 9)
-#define IOX_STCP IMX_GPIO_NR(1, 12)
-#define IOX_SHCP IMX_GPIO_NR(1, 13)
+#define LED_RED   IMX_GPIO_NR(1, 9)
+#define LED_GREEN IMX_GPIO_NR(1, 10)
+#define LED_BLUE  IMX_GPIO_NR(1, 11)
 
-static iomux_v3_cfg_t const iox_pads[] = {
-	/* IOX_SDI */
+static iomux_v3_cfg_t const led_pads[] = {
+	/* RED */
 	MX7D_PAD_GPIO1_IO09__GPIO1_IO9	| MUX_PAD_CTRL(NO_PAD_CTRL),
-	/* IOX_STCP */
-	MX7D_PAD_GPIO1_IO12__GPIO1_IO12	| MUX_PAD_CTRL(NO_PAD_CTRL),
-	/* IOX_SHCP */
-	MX7D_PAD_GPIO1_IO13__GPIO1_IO13	| MUX_PAD_CTRL(NO_PAD_CTRL),
+	/* GREEN */
+	MX7D_PAD_GPIO1_IO10__GPIO1_IO10	| MUX_PAD_CTRL(NO_PAD_CTRL),
+	/* BLUE */
+	MX7D_PAD_GPIO1_IO11__GPIO1_IO11	| MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
-/*
- * PCIE_DIS_B --> Q0
- * PCIE_RST_B --> Q1
- * HDMI_RST_B --> Q2
- * PERI_RST_B --> Q3
- * SENSOR_RST_B --> Q4
- * ENET_RST_B --> Q5
- * PERI_3V3_EN --> Q6
- * LCD_PWR_EN --> Q7
- */
-enum qn {
-	PCIE_DIS_B,
-	PCIE_RST_B,
-	HDMI_RST_B,
-	PERI_RST_B,
-	SENSOR_RST_B,
-	ENET_RST_B,
-	PERI_3V3_EN,
-	LCD_PWR_EN,
-};
+static void led_init(void) {
+	imx_iomux_v3_setup_multiple_pads(led_pads, ARRAY_SIZE(led_pads));
 
-enum qn_func {
-	qn_reset,
-	qn_enable,
-	qn_disable,
-};
-
-enum qn_level {
-	qn_low = 0,
-	qn_high = 1,
-};
-
-static enum qn_level seq[3][2] = {
-	{0, 1}, {1, 1}, {0, 0}
-};
-
-static enum qn_func qn_output[8] = {
-	qn_disable, qn_reset, qn_reset, qn_reset, qn_reset, qn_reset, qn_enable,
-	qn_disable
-};
-
-static void iox74lv_init(void)
-{
-	int i;
-
-	for (i = 7; i >= 0; i--) {
-		gpio_direction_output(IOX_SHCP, 0);
-		gpio_direction_output(IOX_SDI, seq[qn_output[i]][0]);
-		udelay(500);
-		gpio_direction_output(IOX_SHCP, 1);
-		udelay(500);
-	}
-
-	gpio_direction_output(IOX_STCP, 0);
-	udelay(500);
-	/*
-	  * shift register will be output to pins
-	  */
-	gpio_direction_output(IOX_STCP, 1);
-
-	for (i = 7; i >= 0; i--) {
-		gpio_direction_output(IOX_SHCP, 0);
-		gpio_direction_output(IOX_SDI, seq[qn_output[i]][1]);
-		udelay(500);
-		gpio_direction_output(IOX_SHCP, 1);
-		udelay(500);
-	}
-	gpio_direction_output(IOX_STCP, 0);
-	udelay(500);
-	/*
-	  * shift register will be output to pins
-	  */
-	gpio_direction_output(IOX_STCP, 1);
-};
+	gpio_direction_output(LED_RED, 1);
+	gpio_direction_output(LED_GREEN, 1);
+	gpio_direction_output(LED_BLUE, 1);
+}
 
 #ifdef CONFIG_NAND_MXS
 static iomux_v3_cfg_t const gpmi_pads[] = {
@@ -533,9 +466,7 @@ int board_init(void)
 	/* address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
 
-	imx_iomux_v3_setup_multiple_pads(iox_pads, ARRAY_SIZE(iox_pads));
-
-	iox74lv_init();
+	led_init();
 
 #ifdef CONFIG_FEC_MXC
 	setup_fec();
@@ -579,6 +510,9 @@ int power_init_board(void)
 
 	/* disable Low Power Mode during standby mode */
 	pmic_reg_write(p, PFUZE3000_LDOGCTL, 0x1);
+
+	//write to PMIC to turn on 5V boost
+	pmic_reg_write(p, PFUZE3000_SWBSTCTL, 0x48);
 
 	return 0;
 }
